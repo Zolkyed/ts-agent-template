@@ -153,20 +153,51 @@ YAML forms, not markdown — structured fields parse reliably for AI/automation.
 
 ### Labels
 
-```text
-bug
-feature
-refactor
-docs
-chore
+Match the [Conventional Commits](#git-hooks) types so an issue's label predicts the commit prefix its fix will use — `bug` → `fix:`, `feature` → `feat:`, `refactor` → `refactor:`, `docs` → `docs:`, `chore` → `chore:` (also what `task.yml` issues get labeled, since a task rarely maps to its own commit type). Colors follow GitHub's own defaults where one exists, so they look native instead of custom.
+
+```yaml
+# .github/labels.yml
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+
+- name: feature
+  color: a2eeef
+  description: New functionality
+
+- name: refactor
+  color: fbca04
+  description: Code change with no behavior change
+
+- name: docs
+  color: 0075ca
+  description: Documentation only
+
+- name: chore
+  color: cfd3d7
+  description: Maintenance, tooling, deps
 ```
 
-```text
-.github/
-└── labels.yml
+GitHub doesn't read this file natively — sync it with [`EndBug/label-sync`](https://github.com/EndBug/label-sync):
+
+```yaml
+# .github/workflows/labels.yml
+on:
+  push:
+    branches: [main]
+    paths: [.github/labels.yml]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
 ```
 
-GitHub doesn't read this natively — sync it with `gh label` scripting or an action like `github-label-sync`.
+Push a change to `labels.yml` and the workflow applies it — no manual `gh label create` needed, and labels never drift from what's committed.
 
 ### Pull request template
 
@@ -222,6 +253,17 @@ release-please-config.json
 ```
 
 Reads Conventional Commit history since the last release and opens a PR that bumps the version and updates `CHANGELOG.md` — merging that PR is the release. This is the actual payoff of enforcing [Conventional Commits](#git-hooks): without something consuming the convention, it's just a formatting rule nobody benefits from.
+
+**Version bump** — highest-impact commit type since the last tag wins:
+
+```text
+fix:                        → patch  (1.2.3 → 1.2.4)
+feat:                       → minor  (1.2.3 → 1.3.0)
+feat!: / BREAKING CHANGE:   → major  (1.2.3 → 2.0.0)
+docs:, chore:, refactor:    → no bump on their own
+```
+
+**Tags** — SemVer, `v`-prefixed (`v1.2.3`), matching the GitHub Releases convention. `release-please` creates the tag itself when its release PR is merged — don't tag manually, or the tag drifts from what the changelog actually shipped.
 
 ### CODEOWNERS
 
@@ -543,7 +585,8 @@ gh pr view --comments      # what did review say
 │   │   └── config.yml
 │   ├── workflows/
 │   │   ├── ci.yml
-│   │   └── release-please.yml
+│   │   ├── release-please.yml
+│   │   └── labels.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   ├── dependabot.yml
 │   ├── labels.yml
