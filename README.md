@@ -282,7 +282,7 @@ Commit project-level config:
   "recommendations": [
     "EditorConfig.EditorConfig",
     "eamodio.gitlens",
-    "GitHub.vscode-pull-request-github",
+    "GitHub.vscode-pull-request-github"
   ]
 }
 ```
@@ -326,6 +326,41 @@ Keep it in sync with `.env` by hand — nothing enforces this automatically, so 
 ## Files that help the agent specifically
 
 These are the highest-leverage additions in this document — the difference between "the agent read some rules" and "the agent's output is actually verified and placed correctly."
+
+### Canonical commands
+
+One command per action, runnable without guessing the package manager or flags:
+
+```text
+check   → format:check + lint + typecheck + test   (single entry point, run before every commit)
+fix     → format + lint --fix                      (autofix what check would flag)
+build   → production build
+verify  → check + build                            ("is this actually ready" — run before opening a PR)
+```
+
+```json
+{
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "fix": "npm run format && eslint . --fix",
+    "typecheck": "...",
+    "test": "...",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test",
+    "build": "...",
+    "verify": "npm run check && npm run build"
+  }
+}
+```
+
+`git diff --check` is worth adding to `check` too — it's nearly free and catches whitespace/conflict-marker errors nothing else looks for.
+
+Polyglot repo? Use `just` or a `Makefile` instead, so the entry point isn't tied to one language's tooling.
+
+CI runs this same command — see [GitHub Actions (CI)](#github-actions-ci).
+
+This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file. The `edit → check → fix failures → check` loop is simple enough that the agent doesn't need to understand your internal tooling at all — just that `verify` passing means done.
 
 ### `AGENTS.md`
 
@@ -392,41 +427,6 @@ docs/
 ```
 
 Root stays generic (commands, git, GitHub). Each nested one holds only what's specific to that folder — e.g. `src/api/AGENTS.md`: "this adapter must stay framework-agnostic, don't add new deps here"; `tests/AGENTS.md`: "use the `db` fixture, never hit the real database." Don't create one until a folder actually needs rules the root doesn't cover — an empty or redundant nested file is worse than none, same as a stale docs index.
-
-### Canonical commands
-
-One command per action, runnable without guessing the package manager or flags:
-
-```text
-check   → format:check + lint + typecheck + test   (single entry point, run before every commit)
-fix     → format + lint --fix                      (autofix what check would flag)
-build   → production build
-verify  → check + build                            ("is this actually ready" — run before opening a PR)
-```
-
-```json
-{
-  "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint . --max-warnings 0",
-    "fix": "npm run format && eslint . --fix",
-    "typecheck": "...",
-    "test": "...",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test",
-    "build": "...",
-    "verify": "npm run check && npm run build"
-  }
-}
-```
-
-`git diff --check` is worth adding to `check` too — it's nearly free and catches whitespace/conflict-marker errors nothing else looks for.
-
-Polyglot repo? Use `just` or a `Makefile` instead, so the entry point isn't tied to one language's tooling.
-
-CI should run the *exact same* `check` (or `verify`) command, not a parallel set of steps that happens to check similar things — one source of truth, not "local passes but CI has its own opinion."
-
-This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file. The `edit → check → fix failures → check` loop is simple enough that the agent doesn't need to understand your internal tooling at all — just that `verify` passing means done.
 
 ### `docs/`
 
