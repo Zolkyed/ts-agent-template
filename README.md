@@ -19,7 +19,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
 - [ ] [PR template](#pull-request-template)
-- [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore` + `p0`–`p2` + `agent`)
+- [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore`)
 - [ ] [Dependabot](#dependabot)
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
