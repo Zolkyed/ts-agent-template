@@ -1,6 +1,58 @@
 # ai
 
-### 1. Your core stack
+Repo scaffolding for working with an AI coding agent (Claude Code) day to day — the tools, GitHub configuration, and files that make the agent's output verifiable instead of just plausible.
+
+## Setup checklist
+
+Tick these off in order. Details for each are in the matching section below.
+
+**Do first — nothing else works well without these**
+
+- [ ] [`AGENTS.md`](#agentsmd) at repo root, with a `Commands` block
+- [ ] [Canonical `check` command](#canonical-commands) (lint + typecheck + test, one entry point)
+- [ ] [`.gitignore`](#gitignore) — block `node_modules/`, `dist/`, `.env`
+- [ ] [Branch protection on `main`](#repository-settings) — require PR + passing CI, block force-push
+- [ ] [Secret scanning + push protection](#repository-settings) enabled (Settings → Code security)
+- [ ] [CI workflow](#github-actions-ci) — install → lint → typecheck → test → build
+- [ ] `gh` CLI installed and authenticated
+
+**Do next — makes the agent noticeably better, not just safer**
+
+- [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs)
+- [ ] [Git hook runner](#git-hooks) (pre-commit) enforcing Conventional Commits
+- [ ] [`.editorconfig`](#editorconfig)
+- [ ] [Issue templates](#issue-templates) (YAML forms)
+- [ ] [PR template](#pull-request-template)
+- [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore` + `p0`–`p2` + `agent`)
+- [ ] [Dependabot](#dependabot)
+- [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
+- [ ] [`.env.example`](#envexample) kept in sync with `.env`
+- [ ] `rg` and `jq`/`yq` installed locally
+
+**Later — once it's not just you**
+
+- [ ] [CODEOWNERS](#codeowners)
+- [ ] `mise` for tool versions
+- [ ] Dev Containers
+- [ ] GitHub Projects
+- [ ] `direnv`
+- [ ] ADRs under `docs/architecture/decisions/`
+
+## Reference
+
+Everything above, explained.
+
+- [Stack](#stack)
+- [Workflow](#workflow)
+- [GitHub configuration](#github-configuration)
+- [Local tooling](#local-tooling)
+- [Files that help the agent specifically](#files-that-help-the-agent-specifically)
+- [CLI tools](#cli-tools)
+- [Final repository structure](#final-repository-structure)
+
+## Stack
+
+### Core
 
 | Tool | Responsibility |
 |---|---|
@@ -11,20 +63,18 @@
 | **`npx` + Skills** | AI workflows/instructions |
 | **Claude Code** | AI agent |
 
-### 2. I'd add these
+### Worth adding — no dedicated section below
 
 | Tool | Responsibility | Priority |
 |---|---|---:|
-| **GitHub Actions** | Automated tests/build/lint on PRs | ⭐⭐⭐⭐⭐ |
-| **Git hooks** | Enforce rules locally | ⭐⭐⭐⭐ |
 | **`mise`** | Pin/manage project tool versions | ⭐⭐⭐⭐ |
 | **Dev Containers** | Reproducible development environment | ⭐⭐⭐ |
 | **GitHub Projects** | Organize Issues/tasks | ⭐⭐⭐ |
-| **Dependabot** | Dependency update PRs | ⭐⭐⭐ |
 | **`direnv`** | Per-project environment variables | ⭐⭐ |
-| **pre-commit** | Run validation before commits | ⭐⭐ |
 
-### 3. Workflow
+(GitHub Actions, git hooks, Dependabot, and CODEOWNERS each get their own section further down instead of being repeated here.)
+
+## Workflow
 
 ```mermaid
 flowchart LR
@@ -41,16 +91,16 @@ flowchart LR
     H --> J["Issue closed"]
 ```
 
-Worktrees — sequential for one thing at a time, parallel for independent issues:
+**Worktrees** — sequential for one thing at a time, parallel for independent issues:
 
-```
+```text
 Sequential   issue → done → issue → done
 Parallel     issue-a ▸ worktree-a  ┐
              issue-b ▸ worktree-b  ├─ same time
              issue-c ▸ worktree-c  ┘
 ```
 
-### 4. Git / `gh` config useful for AI workflows
+**Git / `gh` config:**
 
 ```bash
 git config extensions.worktreeConfig true
@@ -58,11 +108,13 @@ git config --global push.autoSetupRemote true
 gh config set prompt disabled
 ```
 
-### 5. GitHub repository settings
+## GitHub configuration
+
+### Repository settings
 
 Protect `main`:
 
-```
+```text
 main
 ├── Require pull request
 ├── Require CI checks
@@ -76,9 +128,9 @@ Also enable **automatically delete head branches** after merge, and **secret sca
 
 > Nothing goes directly into main.
 
-### 6. Branch naming
+### Branch naming
 
-```
+```text
 feature/123-add-auth
 fix/124-token-expiration
 refactor/125-auth-service
@@ -88,11 +140,11 @@ chore/127-update-deps
 
 Issue #123 → branch → commits → PR → `Closes #123`
 
-### 7. Issue templates
+### Issue templates
 
 YAML forms, not markdown — structured fields parse reliably for AI/automation.
 
-```
+```text
 .github/
 └── ISSUE_TEMPLATE/
     ├── feature.yml
@@ -101,9 +153,9 @@ YAML forms, not markdown — structured fields parse reliably for AI/automation.
     └── config.yml   # blank_issues_enabled: false
 ```
 
-### 8. GitHub issue labels
+### Labels
 
-```
+```text
 bug
 feature
 refactor
@@ -113,35 +165,34 @@ chore
 
 Plus:
 
-```
+```text
 p0 / p1 / p2   # priority
 agent          # AI-authored, for later auditing
 ```
 
-```
+```text
 .github/
 └── labels.yml
 ```
 
-### 9. Pull request template
+### Pull request template
 
-```
+```text
 .github/
 └── PULL_REQUEST_TEMPLATE.md
 ```
 
-### 10. GitHub Actions
+### GitHub Actions (CI)
 
-```
+```text
 .github/
 └── workflows/
-    ├── ci.yml
-    └── ...
+    └── ci.yml
 ```
 
 Minimum:
 
-```
+```text
 CI
 ├── install
 ├── lint
@@ -150,19 +201,33 @@ CI
 └── build
 ```
 
-### 11. Git hooks
+### Dependabot
 
-Use hooks for things that should be enforced locally.
-
-```
-.git/
-└── hooks/
-    └── commit-msg
+```text
+.github/
+└── dependabot.yml
 ```
 
-Enforce:
+GitHub automatically creates dependency PRs.
 
+### CODEOWNERS
+
+```text
+.github/
+└── CODEOWNERS
 ```
+
+Explicit review boundaries once more than one contributor — human or agent — is involved. Skip it for a solo repo; there's no one to route to.
+
+## Local tooling
+
+### Git hooks
+
+Raw `.git/hooks/` scripts aren't tracked by git — they live outside the repo, so they don't survive a clone or a fresh worktree. Use **pre-commit** instead, so the config file itself (`.pre-commit-config.yaml`) is committed, and every worktree gets the same hooks automatically.
+
+Enforce, at minimum, Conventional Commits on `commit-msg`:
+
+```text
 feat: ...
 fix: ...
 refactor: ...
@@ -171,7 +236,7 @@ docs: ...
 chore: ...
 ```
 
-### 12. `.editorconfig`
+### `.editorconfig`
 
 Consistent formatting across VS Code and other editors.
 
@@ -189,18 +254,18 @@ indent_size = 2
 trim_trailing_whitespace = false
 ```
 
-### 13. VS Code configuration
+### VS Code
 
 Commit project-level config:
 
-```
+```text
 .vscode/
 ├── settings.json
 ├── extensions.json
 └── tasks.json
 ```
 
-`extensions.json` recommends extensions for the project:
+`extensions.json` recommends extensions for the project — don't force them unless necessary:
 
 ```json
 {
@@ -214,22 +279,47 @@ Commit project-level config:
 }
 ```
 
-Don't force extensions unless absolutely necessary.
+**GitLens** is the one extension worth calling out specifically — inline blame/history, the fastest way to see what an agent changed and when without leaving the editor.
 
-### 14. VS Code extensions
+### `.gitignore`
 
-- **GitLens** — inline blame/history, fastest way to see what an agent changed and when without leaving the editor.
+Prevents build output, `node_modules`, and `.env` from ever being committed — the base guard against an agent leaking secrets or bloating history.
 
-### 15. GitHub Dependabot
-
+```gitignore
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
 ```
-.github/
-└── dependabot.yml
+
+### `.npmrc`
+
+Pins install behavior so an agent gets identical results across sessions/worktrees, not whatever the resolver feels like that day.
+
+```ini
+engine-strict=true
+save-exact=true
 ```
 
-GitHub automatically creates dependency PRs.
+### `.env.example`
 
-### 16. `AGENTS.md`
+`.env` itself is gitignored, so without this the agent has no way to know what config even exists — it'll guess variable names or skip a feature that needs one. Commit the shape, not the values:
+
+```bash
+DATABASE_URL=
+API_KEY=
+PORT=3000
+```
+
+Keep it in sync with `.env` by hand — nothing enforces this automatically, so a stale `.env.example` quietly becomes as misleading as no file at all.
+
+## Files that help the agent specifically
+
+These are the highest-leverage additions in this document — the difference between "the agent read some rules" and "the agent's output is actually verified and placed correctly."
+
+### `AGENTS.md`
 
 At the repository root. Keep it short — Skills hold the detailed workflows.
 
@@ -264,45 +354,11 @@ See `docs/INDEX.md` before searching the codebase blind.
 
 The `Commands` block is the highest-leverage line in this file: it's the one thing that turns "the agent read the rules" into "the agent's output is verified," rather than trusting it to guess your package manager and flags correctly every session.
 
-### 17. `.gitignore`
+### Canonical commands
 
-Prevents build output, `node_modules`, and `.env` from ever being committed — the base guard against an agent leaking secrets or bloating history.
+One command per action, runnable without guessing the package manager or flags:
 
-```gitignore
-node_modules/
-dist/
-build/
-.env
-.env.*
-!.env.example
-```
-
-### 18. `.npmrc`
-
-Pins install behavior so an agent gets identical results across sessions/worktrees, not whatever the resolver feels like that day.
-
-```ini
-engine-strict=true
-save-exact=true
-```
-
-### 19. `docs/`
-
-Start flat. Split into subfolders only once one category has enough files to justify it.
-
-```
-docs/
-├── api/            # endpoint docs, .http files, openapi.yaml
-├── architecture/   # design decisions, diagrams
-├── guides/         # how-to / setup / onboarding
-└── assets/         # images used by the docs above
-```
-
-### 20. Canonical commands
-
-One command per action, documented in AGENTS.md and runnable without guessing the package manager or flags:
-
-```
+```text
 check   → lint + typecheck + test   (single entry point, run before every commit)
 test    → test suite
 build   → production build
@@ -324,9 +380,20 @@ Polyglot repo? Use `just` or a `Makefile` instead, so the entry point isn't tied
 
 This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file.
 
-### 21. `docs/INDEX.md`
+### `docs/`
 
-A one-page map of `docs/`, so the agent finds things instead of grepping blind:
+Start flat. Split into subfolders only once one category has enough files to justify it.
+
+```text
+docs/
+├── INDEX.md        # map of everything below
+├── api/            # endpoint docs, .http files, openapi.yaml
+├── architecture/   # design decisions, diagrams
+├── guides/         # how-to / setup / onboarding
+└── assets/         # images used by the docs above
+```
+
+**`docs/INDEX.md`** — a one-page map so the agent finds things instead of grepping blind:
 
 ```markdown
 # Docs Index
@@ -337,20 +404,15 @@ A one-page map of `docs/`, so the agent finds things instead of grepping blind:
 
 Update it whenever `docs/` changes — a stale index is worse than no index, since the agent will trust it.
 
-### 22. Architecture overview
+**`docs/architecture/overview.md`** — module boundaries, where new code belongs, and why any unusual decisions exist. This is what lets an agent place a new file correctly instead of guessing from whatever's nearby. Once the project has enough of these, split them into ADRs under `docs/architecture/decisions/` — preserves *why*, not just *what*, so future agents don't re-litigate settled decisions.
 
-`docs/architecture/overview.md` — module boundaries, where new code belongs, and why any unusual decisions exist. This is what lets an agent place a new file correctly instead of guessing from whatever's nearby. Once the project has enough of these, split them into ADRs under `docs/architecture/decisions/`.
-
-### 23. CLI tools you must have for AI coding
+## CLI tools
 
 | Tool | Why it matters for AI coding | Priority |
 |---|---|---:|
 | **`gh`** | Agent checks CI/review status without leaving the CLI — `gh pr checks`, `gh run view`, `gh pr view --comments` | ⭐⭐⭐⭐⭐ |
 | **`rg` (ripgrep)** | Fast, predictable search — what Claude Code's own search tool already shells out to | ⭐⭐⭐⭐⭐ |
 | **`jq` / `yq`** | Inspect/transform JSON/YAML reliably instead of the agent guessing structure | ⭐⭐⭐⭐⭐ |
-| **Lefthook *or* pre-commit** (pick one) | Automated local validation — don't run this alongside raw git hooks (§11), it's the same job twice | ⭐⭐⭐⭐ |
-| **ADR system** (`docs/architecture/decisions/`) | Preserves *why*, not just *what* — future agents don't re-litigate settled decisions | ⭐⭐⭐⭐ |
-| **CODEOWNERS** | Explicit review boundaries once more than one contributor — human or agent — is involved | ⭐⭐⭐ |
 
 Skip: `tree`/`fd` (already covered by the agent's built-in file tools), `act` (adds a Docker dependency to replicate what a real CI run already tells you for free).
 
@@ -362,9 +424,9 @@ gh run view --log-failed   # why did it fail
 gh pr view --comments      # what did review say
 ```
 
-### 24. Your final repository structure
+## Final repository structure
 
-```
+```text
 .
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
@@ -393,6 +455,8 @@ gh pr view --comments      # what did review say
 ├── .editorconfig
 ├── .gitignore
 ├── .npmrc
+├── .env.example
+├── .pre-commit-config.yaml
 ├── AGENTS.md
 └── README.md
 ```
