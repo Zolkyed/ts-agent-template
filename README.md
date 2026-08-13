@@ -72,8 +72,6 @@ Everything above, explained.
 | **GitHub Projects** | Organize Issues/tasks | ⭐⭐⭐ |
 | **`direnv`** | Per-project environment variables | ⭐⭐ |
 
-(GitHub Actions, git hooks, Dependabot, and CODEOWNERS each get their own section further down instead of being repeated here.)
-
 ## Workflow
 
 ```mermaid
@@ -413,8 +411,6 @@ Update it whenever `docs/` changes — a stale index is worse than no index, sin
 | **`gh`** | Agent checks CI/review status without leaving the CLI — `gh pr checks`, `gh run view`, `gh pr view --comments` | ⭐⭐⭐⭐⭐ |
 | **`rg` (ripgrep)** | Fast, predictable search — what Claude Code's own search tool already shells out to | ⭐⭐⭐⭐⭐ |
 | **`jq` / `yq`** | Inspect/transform JSON/YAML reliably instead of the agent guessing structure | ⭐⭐⭐⭐⭐ |
-
-Skip: `tree`/`fd` (already covered by the agent's built-in file tools), `act` (adds a Docker dependency to replicate what a real CI run already tells you for free).
 
 The one habit worth building in: an agent should reach for `gh` before asking you "did the PR pass?"
 
