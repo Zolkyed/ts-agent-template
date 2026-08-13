@@ -4,7 +4,7 @@ Tick these off in order. Details for each are in the matching section below.
 
 **Do first — nothing else works well without these**
 
-- [ ] [`AGENTS.md`](#agentsmd) at repo root, with a `Commands` block
+- [ ] [`AGENTS.md`](#agentsmd) at repo root, with a `Commands` block — nest more in subfolders as they need their own rules
 - [ ] [Canonical `check` command](#canonical-commands) (lint + typecheck + test, one entry point)
 - [ ] [`.gitignore`](#gitignore) — block `node_modules/`, `dist/`, `.env`
 - [ ] [Branch protection on `main`](#repository-settings) — require PR + passing CI, block force-push
@@ -248,6 +248,21 @@ indent_size = 2
 trim_trailing_whitespace = false
 ```
 
+### Prettier
+
+`.editorconfig` only sets baseline editor behavior (indent size, line endings) — it doesn't rewrite code. Prettier actually enforces and auto-fixes style, so the agent's output is formatted the same way every time instead of drifting toward whatever it typed. Wire it into the tools you already have:
+
+```json
+{
+  "scripts": {
+    "format": "prettier --write ."
+  }
+}
+```
+
+- Run it as part of `check` (§Canonical commands), or as a `pre-commit` hook (§Git hooks) — pick one, not both, same reasoning as the hook-runner choice.
+- Commit `.prettierrc` and `.prettierignore` so formatting is deterministic across sessions and worktrees, not whatever defaults happen to be installed.
+
 ### VS Code
 
 Commit project-level config:
@@ -347,6 +362,22 @@ See `docs/INDEX.md` before searching the codebase blind.
 ```
 
 The `Commands` block is the highest-leverage line in this file: it's the one thing that turns "the agent read the rules" into "the agent's output is verified," rather than trusting it to guess your package manager and flags correctly every session.
+
+**Nest it.** Once the root file exists, add scoped `AGENTS.md` files inside the directories that need their own rules — the agent picks up the closest one to whatever it's editing, on top of the root:
+
+```text
+AGENTS.md
+src/
+├── AGENTS.md
+└── api/
+    └── AGENTS.md
+tests/
+└── AGENTS.md
+docs/
+└── AGENTS.md
+```
+
+Root stays generic (commands, git, GitHub). Each nested one holds only what's specific to that folder — e.g. `src/api/AGENTS.md`: "this adapter must stay framework-agnostic, don't add new deps here"; `tests/AGENTS.md`: "use the `db` fixture, never hit the real database." Don't create one until a folder actually needs rules the root doesn't cover — an empty or redundant nested file is worse than none, same as a stale docs index.
 
 ### Canonical commands
 
