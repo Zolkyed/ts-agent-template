@@ -341,7 +341,28 @@ Update it whenever `docs/` changes — a stale index is worse than no index, sin
 
 `docs/architecture/overview.md` — module boundaries, where new code belongs, and why any unusual decisions exist. This is what lets an agent place a new file correctly instead of guessing from whatever's nearby. Once the project has enough of these, split them into ADRs under `docs/architecture/decisions/`.
 
-### 23. Your final repository structure
+### 23. CLI tools you must have for AI coding
+
+| Tool | Why it matters for AI coding | Priority |
+|---|---|---:|
+| **`gh`** | Agent checks CI/review status without leaving the CLI — `gh pr checks`, `gh run view`, `gh pr view --comments` | ⭐⭐⭐⭐⭐ |
+| **`rg` (ripgrep)** | Fast, predictable search — what Claude Code's own search tool already shells out to | ⭐⭐⭐⭐⭐ |
+| **`jq` / `yq`** | Inspect/transform JSON/YAML reliably instead of the agent guessing structure | ⭐⭐⭐⭐⭐ |
+| **Lefthook *or* pre-commit** (pick one) | Automated local validation — don't run this alongside raw git hooks (§11), it's the same job twice | ⭐⭐⭐⭐ |
+| **ADR system** (`docs/architecture/decisions/`) | Preserves *why*, not just *what* — future agents don't re-litigate settled decisions | ⭐⭐⭐⭐ |
+| **CODEOWNERS** | Explicit review boundaries once more than one contributor — human or agent — is involved | ⭐⭐⭐ |
+
+Skip: `tree`/`fd` (already covered by the agent's built-in file tools), `act` (adds a Docker dependency to replicate what a real CI run already tells you for free).
+
+The one habit worth building in: an agent should reach for `gh` before asking you "did the PR pass?"
+
+```bash
+gh pr checks               # did CI pass
+gh run view --log-failed   # why did it fail
+gh pr view --comments      # what did review say
+```
+
+### 24. Your final repository structure
 
 ```
 .
@@ -355,7 +376,8 @@ Update it whenever `docs/` changes — a stale index is worse than no index, sin
 │   │   └── ci.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   ├── dependabot.yml
-│   └── labels.yml
+│   ├── labels.yml
+│   └── CODEOWNERS
 ├── .vscode/
 │   ├── settings.json
 │   ├── extensions.json
