@@ -21,6 +21,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
 - [ ] [Pull request template](#pull-request-template)
+- [ ] [PR title lint](#pr-title) — enforces Conventional Commits on the commit that actually lands on `main`
 - [ ] [AI PR review](#ai-pr-review) — auto inline + summary comments on every PR
 - [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore`)
 - [ ] [Dependabot](#dependabot)
@@ -205,6 +206,27 @@ Push a change to `labels.yml` and the workflow applies it — no manual `gh labe
 .github/
 └── PULL_REQUEST_TEMPLATE.md
 ```
+
+### PR title
+
+The one place [Conventional Commits](#git-hooks) actually matters at merge time: squash merge uses the PR title as the commit that lands on `main`, and that's what [`release-please`](#release-please) reads to compute the version bump. The `commit-msg` hook only checks individual commits during the PR — it says nothing about the title, so lint it separately:
+
+```yaml
+# .github/workflows/pr-title.yml
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  lint-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Add it as a required status check in [Repository settings](#repository-settings) — otherwise it runs but doesn't block the merge, and the whole point is that a bad title can't land.
 
 ### AI PR review
 
@@ -586,7 +608,8 @@ gh pr view --comments      # what did review say
 │   ├── workflows/
 │   │   ├── ci.yml
 │   │   ├── release-please.yml
-│   │   └── labels.yml
+│   │   ├── labels.yml
+│   │   └── pr-title.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   ├── dependabot.yml
 │   ├── labels.yml
