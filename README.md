@@ -16,6 +16,8 @@ Tick these off in order. Details for each are in the matching section below.
 
 - [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs)
 - [ ] [Git hook runner](#git-hooks) (pre-commit) enforcing Conventional Commits
+- [ ] [`detect-secrets`](#detect-secrets) pre-commit hook + `.secrets.baseline` — catches a leak before the commit, not after
+- [ ] [`release-please`](#release-please) — turns those commits into `CHANGELOG.md` + version bumps
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
 - [ ] [PR template](#pull-request-template)
@@ -30,6 +32,7 @@ Tick these off in order. Details for each are in the matching section below.
 **Later — once it's not just you**
 
 - [ ] [CODEOWNERS](#codeowners)
+- [ ] `CONTRIBUTING.md`
 - [ ] Dev Containers
 - [ ] GitHub Projects
 - [ ] `direnv`
@@ -198,6 +201,18 @@ Run the exact same `check`/`verify` command here as locally, not a parallel set 
 
 GitHub automatically creates dependency PRs.
 
+### `release-please`
+
+```text
+.github/
+└── workflows/
+    └── release-please.yml
+release-please-config.json
+.release-please-manifest.json
+```
+
+Reads Conventional Commit history since the last release and opens a PR that bumps the version and updates `CHANGELOG.md` — merging that PR is the release. This is the actual payoff of enforcing Conventional Commits (§Git hooks): without something consuming the convention, it's just a formatting rule nobody benefits from.
+
 ### CODEOWNERS
 
 ```text
@@ -222,6 +237,24 @@ refactor: ...
 test: ...
 docs: ...
 chore: ...
+```
+
+### `detect-secrets`
+
+GitHub's secret scanning (§Repository settings) only catches a leaked key after it's pushed. `detect-secrets` runs as a `pre-commit` hook and catches it before the commit even happens — the layer in front, not behind:
+
+```yaml
+- repo: https://github.com/Yelp/detect-secrets
+  rev: v1.5.0
+  hooks:
+    - id: detect-secrets
+      args: ['--baseline', '.secrets.baseline']
+```
+
+Generate the baseline once (existing matches get allow-listed), then it blocks anything new:
+
+```bash
+detect-secrets scan > .secrets.baseline
 ```
 
 ### `.editorconfig`
@@ -484,7 +517,8 @@ gh pr view --comments      # what did review say
 │   │   ├── task.yml
 │   │   └── config.yml
 │   ├── workflows/
-│   │   └── ci.yml
+│   │   ├── ci.yml
+│   │   └── release-please.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   ├── dependabot.yml
 │   ├── labels.yml
@@ -509,7 +543,11 @@ gh pr view --comments      # what did review say
 ├── .pre-commit-config.yaml
 ├── .prettierrc
 ├── .prettierignore
+├── .secrets.baseline
 ├── .mise.toml
+├── release-please-config.json
+├── .release-please-manifest.json
 ├── AGENTS.md
+├── CONTRIBUTING.md
 └── README.md
 ```
