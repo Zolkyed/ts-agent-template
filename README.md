@@ -15,12 +15,12 @@ Tick these off in order. Details for each are in the matching section below.
 **Do next — makes the agent noticeably better, not just safer**
 
 - [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs) + [`docs/testing.md`](#docs)
-- [ ] [Git hook runner](#git-hooks) (pre-commit) enforcing Conventional Commits
+- [ ] [Git hooks](#git-hooks) (`pre-commit`) enforcing Conventional Commits
 - [ ] [`detect-secrets`](#detect-secrets) pre-commit hook + `.secrets.baseline`
 - [ ] [`release-please`](#release-please) — turns those commits into `CHANGELOG.md` + version bumps
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
-- [ ] [PR template](#pull-request-template)
+- [ ] [Pull request template](#pull-request-template)
 - [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore`)
 - [ ] [Dependabot](#dependabot)
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
@@ -227,7 +227,7 @@ Explicit review boundaries once more than one contributor — human or agent —
 
 ### Git hooks
 
-`.git/hooks/` isn't tracked by git, so it won't survive a clone or new worktree. Use **pre-commit** instead — its config (`.pre-commit-config.yaml`) is a committed file, so every worktree gets the same hooks.
+`.git/hooks/` isn't tracked by git, so it won't survive a clone or new worktree. Use `pre-commit` instead — its config (`.pre-commit-config.yaml`) is a committed file, so every worktree gets the same hooks.
 
 Enforce, at minimum, Conventional Commits on `commit-msg`:
 
