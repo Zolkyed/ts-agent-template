@@ -1,7 +1,3 @@
-# ai
-
-Repo scaffolding for working with an AI coding agent (Claude Code) day to day — the tools, GitHub configuration, and files that make the agent's output verifiable instead of just plausible.
-
 ## Setup checklist
 
 Tick these off in order. Details for each are in the matching section below.
