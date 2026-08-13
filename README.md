@@ -1,6 +1,6 @@
 # ai
 
-### Your core stack
+### 1. Your core stack
 
 | Tool | Responsibility |
 |---|---|
@@ -11,7 +11,7 @@
 | **`npx` + Skills** | AI workflows/instructions |
 | **Claude Code** | AI agent |
 
-### I'd add these
+### 2. I'd add these
 
 | Tool | Responsibility | Priority |
 |---|---|---:|
@@ -24,11 +24,12 @@
 | **`direnv`** | Per-project environment variables | ⭐⭐ |
 | **pre-commit** | Run validation before commits | ⭐⭐ |
 
-### Workflow
+### 3. Workflow
 
 ```mermaid
 flowchart LR
-    A["Issue #123"] --> B["Branch<br/>feature/123-..."]
+    A["Issue #123"] --> P["/plan"]
+    P --> B["Branch<br/>feature/123-..."]
     B --> C["Commits<br/>(conventional)"]
     C --> D["Push"]
     D --> E["PR · Closes #123"]
@@ -40,7 +41,16 @@ flowchart LR
     H --> J["Issue closed"]
 ```
 
-### Git / `gh` config useful for AI workflows
+Worktrees — sequential for one thing at a time, parallel for independent issues:
+
+```
+Sequential   issue → done → issue → done
+Parallel     issue-a ▸ worktree-a  ┐
+             issue-b ▸ worktree-b  ├─ same time
+             issue-c ▸ worktree-c  ┘
+```
+
+### 4. Git / `gh` config useful for AI workflows
 
 ```bash
 git config extensions.worktreeConfig true
@@ -48,7 +58,7 @@ git config --global push.autoSetupRemote true
 gh config set prompt disabled
 ```
 
-### GitHub repository settings
+### 5. GitHub repository settings
 
 Protect `main`:
 
@@ -62,11 +72,11 @@ main
 └── Require branch to be up to date (optional)
 ```
 
-Also enable **automatically delete head branches** after merge.
+Also enable **automatically delete head branches** after merge, and **secret scanning + push protection** (Settings → Code security) — free, GitHub-native, zero config, the cheapest defense against an agent leaking a key.
 
 > Nothing goes directly into main.
 
-### Branch naming
+### 6. Branch naming
 
 ```
 feature/123-add-auth
@@ -78,7 +88,7 @@ chore/127-update-deps
 
 Issue #123 → branch → commits → PR → `Closes #123`
 
-### Issue templates
+### 7. Issue templates
 
 YAML forms, not markdown — structured fields parse reliably for AI/automation.
 
@@ -91,7 +101,7 @@ YAML forms, not markdown — structured fields parse reliably for AI/automation.
     └── config.yml   # blank_issues_enabled: false
 ```
 
-### GitHub issue labels
+### 8. GitHub issue labels
 
 ```
 bug
@@ -113,14 +123,14 @@ agent          # AI-authored, for later auditing
 └── labels.yml
 ```
 
-### Pull request template
+### 9. Pull request template
 
 ```
 .github/
 └── PULL_REQUEST_TEMPLATE.md
 ```
 
-### GitHub Actions
+### 10. GitHub Actions
 
 ```
 .github/
@@ -140,7 +150,7 @@ CI
 └── build
 ```
 
-### Git hooks
+### 11. Git hooks
 
 Use hooks for things that should be enforced locally.
 
@@ -161,7 +171,7 @@ docs: ...
 chore: ...
 ```
 
-### `.editorconfig`
+### 12. `.editorconfig`
 
 Consistent formatting across VS Code and other editors.
 
@@ -179,7 +189,7 @@ indent_size = 2
 trim_trailing_whitespace = false
 ```
 
-### VS Code configuration
+### 13. VS Code configuration
 
 Commit project-level config:
 
@@ -206,11 +216,11 @@ Commit project-level config:
 
 Don't force extensions unless absolutely necessary.
 
-### VS Code extensions
+### 14. VS Code extensions
 
 - **GitLens** — inline blame/history, fastest way to see what an agent changed and when without leaving the editor.
 
-### GitHub Dependabot
+### 15. GitHub Dependabot
 
 ```
 .github/
@@ -219,7 +229,7 @@ Don't force extensions unless absolutely necessary.
 
 GitHub automatically creates dependency PRs.
 
-### `AGENTS.md`
+### 16. `AGENTS.md`
 
 At the repository root. Keep it short — Skills hold the detailed workflows.
 
@@ -246,7 +256,7 @@ At the repository root. Keep it short — Skills hold the detailed workflows.
 - Don't modify unrelated files.
 ```
 
-### `.gitignore`
+### 17. `.gitignore`
 
 Prevents build output, `node_modules`, and `.env` from ever being committed — the base guard against an agent leaking secrets or bloating history.
 
@@ -259,7 +269,7 @@ build/
 !.env.example
 ```
 
-### `.npmrc`
+### 18. `.npmrc`
 
 Pins install behavior so an agent gets identical results across sessions/worktrees, not whatever the resolver feels like that day.
 
@@ -268,7 +278,7 @@ engine-strict=true
 save-exact=true
 ```
 
-### `docs/`
+### 19. `docs/`
 
 Start flat. Split into subfolders only once one category has enough files to justify it.
 
@@ -280,7 +290,7 @@ docs/
 └── assets/         # images used by the docs above
 ```
 
-### Your final repository structure
+### 20. Your final repository structure
 
 ```
 .
