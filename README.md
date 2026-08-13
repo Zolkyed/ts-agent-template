@@ -4,13 +4,13 @@ Tick these off in order. Details for each are in the matching section below.
 
 **Do first — nothing else works well without these**
 
-- [ ] [`AGENTS.md`](#agentsmd) at repo root, with a `Commands` block — nest more in subfolders as they need their own rules
-- [ ] [Canonical `check` command](#canonical-commands) (lint + typecheck + test, one entry point)
+- [ ] `gh` CLI installed and authenticated — needed to script the GitHub-side steps below
+- [ ] [Canonical `check` / `fix` / `verify` commands](#canonical-commands)
+- [ ] [`AGENTS.md`](#agentsmd) at repo root — Commands + Safety sections — nest more in subfolders as they need their own rules
 - [ ] [`.gitignore`](#gitignore) — block `node_modules/`, `dist/`, `.env`
+- [ ] [CI workflow](#github-actions-ci) — install → check → build
 - [ ] [Branch protection on `main`](#repository-settings) — require PR + passing CI, block force-push
 - [ ] [Secret scanning + push protection](#repository-settings) enabled (Settings → Code security)
-- [ ] [CI workflow](#github-actions-ci) — install → lint → typecheck → test → build
-- [ ] `gh` CLI installed and authenticated
 
 **Do next — makes the agent noticeably better, not just safer**
 
@@ -23,12 +23,13 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [Dependabot](#dependabot)
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
+- [ ] `mise` pinning the toolchain (`.mise.toml`) — reproducibility, not a team-size feature
+- [ ] [`docs/testing.md`](#docs) — what kind of test belongs where, and "don't weaken tests to pass"
 - [ ] `rg` and `jq`/`yq` installed locally
 
 **Later — once it's not just you**
 
 - [ ] [CODEOWNERS](#codeowners)
-- [ ] `mise` for tool versions
 - [ ] Dev Containers
 - [ ] GitHub Projects
 - [ ] `direnv`
@@ -188,12 +189,12 @@ Minimum:
 
 ```text
 CI
-├── install
-├── lint
-├── typecheck
-├── test
+├── install   (cached — keeps the agent's feedback loop fast)
+├── check     (same command as local — see Canonical commands)
 └── build
 ```
+
+Run the exact same `check`/`verify` command here as locally, not a parallel set of steps that happens to check similar things — see [Canonical commands](#canonical-commands). CI existing to catch a difference between "passes locally" and "passes for real" only works if there isn't a second, slightly different definition of "passes."
 
 ### Dependabot
 
@@ -260,7 +261,7 @@ trim_trailing_whitespace = false
 }
 ```
 
-- Run it as part of `check` (§Canonical commands), or as a `pre-commit` hook (§Git hooks) — pick one, not both, same reasoning as the hook-runner choice.
+- Wired into `check` via `format:check` (see [Canonical commands](#canonical-commands)); add it as a `pre-commit` hook too if you want the fix applied before the commit even lands.
 - Commit `.prettierrc` and `.prettierignore` so formatting is deterministic across sessions and worktrees, not whatever defaults happen to be installed.
 
 ### VS Code
@@ -280,10 +281,8 @@ Commit project-level config:
 {
   "recommendations": [
     "EditorConfig.EditorConfig",
-    "redhat.vscode-yaml",
     "eamodio.gitlens",
     "GitHub.vscode-pull-request-github",
-    "humao.rest-client"
   ]
 }
 ```
@@ -336,15 +335,17 @@ At the repository root. Keep it short — Skills hold the detailed workflows.
 # Development Instructions
 
 ## Commands
-- Install: `...`
-- Check (lint + typecheck + test): `...`
-- Build: `...`
+- Install: `npm ci`
+- Check: `npm run check`
+- Fix: `npm run fix`
+- Build: `npm run build`
+- Verify: `npm run verify`
 See `docs/INDEX.md` before searching the codebase blind.
 
 ## Git
 - Work only in the current worktree.
 - Never work directly on `main`.
-- Inspect `git status` before making changes.
+- Inspect `git status` before making changes — including before reset, checkout, clean, or stash.
 - Use Conventional Commits.
 
 ## GitHub
@@ -352,13 +353,26 @@ See `docs/INDEX.md` before searching the codebase blind.
 - Reference the Issue in the PR (`Closes #123`).
 - Do not merge PRs unless explicitly requested.
 
+## Dependencies
+- Never hand-edit the lockfile — update it only through package-manager commands.
+- Commit lockfile changes alongside the `package.json` change that caused them.
+
 ## Testing
-- Run `check` before committing.
-- Run the build before creating a PR.
+- Run `verify` before opening a PR.
+- Every bug fix adds a regression test; every new feature adds tests.
+- Do not weaken or delete a test to make it pass.
 
 ## Code
 - Follow existing project architecture — see `docs/architecture/overview.md`.
 - Don't modify unrelated files.
+
+## Safety
+- Never delete files unless the task requires it.
+- Never read, modify, or commit secrets or `.env` files.
+- Never disable a test or lint rule to make CI pass.
+- Never `--force` push or rewrite history on a shared branch.
+- Never modify CI or security configuration unless the task requires it.
+- Ask before merging PRs, deleting branches, or making unrelated refactors.
 ```
 
 The `Commands` block is the highest-leverage line in this file: it's the one thing that turns "the agent read the rules" into "the agent's output is verified," rather than trusting it to guess your package manager and flags correctly every session.
@@ -384,26 +398,35 @@ Root stays generic (commands, git, GitHub). Each nested one holds only what's sp
 One command per action, runnable without guessing the package manager or flags:
 
 ```text
-check   → lint + typecheck + test   (single entry point, run before every commit)
-test    → test suite
+check   → format:check + lint + typecheck + test   (single entry point, run before every commit)
+fix     → format + lint --fix                      (autofix what check would flag)
 build   → production build
+verify  → check + build                            ("is this actually ready" — run before opening a PR)
 ```
 
 ```json
 {
   "scripts": {
-    "check": "npm run lint && npm run typecheck && npm run test",
-    "lint": "...",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "fix": "npm run format && eslint . --fix",
     "typecheck": "...",
     "test": "...",
-    "build": "..."
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test",
+    "build": "...",
+    "verify": "npm run check && npm run build"
   }
 }
 ```
 
+`git diff --check` is worth adding to `check` too — it's nearly free and catches whitespace/conflict-marker errors nothing else looks for.
+
 Polyglot repo? Use `just` or a `Makefile` instead, so the entry point isn't tied to one language's tooling.
 
-This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file.
+CI should run the *exact same* `check` (or `verify`) command, not a parallel set of steps that happens to check similar things — one source of truth, not "local passes but CI has its own opinion."
+
+This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file. The `edit → check → fix failures → check` loop is simple enough that the agent doesn't need to understand your internal tooling at all — just that `verify` passing means done.
 
 ### `docs/`
 
@@ -412,6 +435,7 @@ Start flat. Split into subfolders only once one category has enough files to jus
 ```text
 docs/
 ├── INDEX.md        # map of everything below
+├── testing.md      # what kind of test belongs where
 ├── api/            # endpoint docs, .http files, openapi.yaml
 ├── architecture/   # design decisions, diagrams
 ├── guides/         # how-to / setup / onboarding
@@ -423,6 +447,7 @@ docs/
 ```markdown
 # Docs Index
 - [Architecture overview](architecture/overview.md)
+- [Testing](testing.md)
 - [API reference](api/)
 - [Setup guide](guides/setup.md)
 ```
@@ -430,6 +455,16 @@ docs/
 Update it whenever `docs/` changes — a stale index is worse than no index, since the agent will trust it.
 
 **`docs/architecture/overview.md`** — module boundaries, where new code belongs, and why any unusual decisions exist. This is what lets an agent place a new file correctly instead of guessing from whatever's nearby. Once the project has enough of these, split them into ADRs under `docs/architecture/decisions/` — preserves *why*, not just *what*, so future agents don't re-litigate settled decisions.
+
+**`docs/testing.md`** — what kind of test belongs where:
+
+```text
+Unit        → pure logic
+Integration → modules interacting
+E2E         → user workflows
+```
+
+Pair it with the Safety rule already in AGENTS.md: don't weaken or delete a test to make it pass. Without both together, an agent under pressure to get `check` green will take the shortcut of quietly gutting the assertion instead of fixing the bug.
 
 ## CLI tools
 
@@ -469,6 +504,7 @@ gh pr view --comments      # what did review say
 │   └── tasks.json
 ├── docs/
 │   ├── INDEX.md
+│   ├── testing.md
 │   ├── api/
 │   ├── architecture/
 │   │   ├── overview.md
@@ -480,6 +516,9 @@ gh pr view --comments      # what did review say
 ├── .npmrc
 ├── .env.example
 ├── .pre-commit-config.yaml
+├── .prettierrc
+├── .prettierignore
+├── .mise.toml
 ├── AGENTS.md
 └── README.md
 ```
