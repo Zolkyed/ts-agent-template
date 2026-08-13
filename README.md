@@ -21,6 +21,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
 - [ ] [Pull request template](#pull-request-template)
+- [ ] [AI PR review](#ai-pr-review) — auto inline + summary comments on every PR
 - [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore`)
 - [ ] [Dependabot](#dependabot)
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
@@ -173,6 +174,14 @@ GitHub doesn't read this natively — sync it with `gh label` scripting or an ac
 .github/
 └── PULL_REQUEST_TEMPLATE.md
 ```
+
+### AI PR review
+
+Automatic first-pass review on every PR — inline comments on the flagged lines plus a summary comment — using each vendor's native GitHub integration, so no API key and no extra billing beyond the existing subscription.
+
+**Claude Code** (Team/Enterprise plan): `claude.ai/admin-settings/claude-code` → Setup → install the GitHub App → select repos → pick a trigger (on PR open / on every push / manual).
+
+**GitHub Copilot**: repo → Settings → Rulesets → New branch ruleset → under Branch rules enable **Automatically request Copilot code review** → optionally **Review new pushes** (re-review each push) and **Review draft pull requests**.
 
 ### GitHub Actions (CI)
 
