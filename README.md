@@ -14,7 +14,7 @@ Tick these off in order. Details for each are in the matching section below.
 
 **Do next — makes the agent noticeably better, not just safer**
 
-- [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs)
+- [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs) + [`docs/testing.md`](#docs) — what kind of test belongs where, and "don't weaken tests to pass"
 - [ ] [Git hook runner](#git-hooks) (pre-commit) enforcing Conventional Commits
 - [ ] [`detect-secrets`](#detect-secrets) pre-commit hook + `.secrets.baseline` — catches a leak before the commit, not after
 - [ ] [`release-please`](#release-please) — turns those commits into `CHANGELOG.md` + version bumps
@@ -26,7 +26,6 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
 - [ ] `mise` pinning the toolchain (`.mise.toml`) — reproducibility, not a team-size feature
-- [ ] [`docs/testing.md`](#docs) — what kind of test belongs where, and "don't weaken tests to pass"
 - [ ] `rg` and `jq`/`yq` installed locally
 
 **Later — once it's not just you**
@@ -166,6 +165,8 @@ chore
 └── labels.yml
 ```
 
+GitHub doesn't read this natively — sync it with `gh label` scripting or an action like `github-label-sync`.
+
 ### Pull request template
 
 ```text
@@ -211,7 +212,7 @@ release-please-config.json
 .release-please-manifest.json
 ```
 
-Reads Conventional Commit history since the last release and opens a PR that bumps the version and updates `CHANGELOG.md` — merging that PR is the release. This is the actual payoff of enforcing Conventional Commits (§Git hooks): without something consuming the convention, it's just a formatting rule nobody benefits from.
+Reads Conventional Commit history since the last release and opens a PR that bumps the version and updates `CHANGELOG.md` — merging that PR is the release. This is the actual payoff of enforcing [Conventional Commits](#git-hooks): without something consuming the convention, it's just a formatting rule nobody benefits from.
 
 ### CODEOWNERS
 
@@ -241,7 +242,7 @@ chore: ...
 
 ### `detect-secrets`
 
-GitHub's secret scanning (§Repository settings) only catches a leaked key after it's pushed. `detect-secrets` runs as a `pre-commit` hook and catches it before the commit even happens — the layer in front, not behind:
+GitHub's [secret scanning](#repository-settings) only catches a leaked key after it's pushed. `detect-secrets` runs as a `pre-commit` hook and catches it before the commit even happens — the layer in front, not behind:
 
 ```yaml
 - repo: https://github.com/Yelp/detect-secrets
@@ -330,7 +331,7 @@ build/
 
 ### `.npmrc`
 
-Pins install behavior so an agent gets identical results across sessions/worktrees, not whatever the resolver feels like that day.
+`engine-strict` blocks installs on the wrong Node/npm version instead of silently succeeding; `save-exact` pins newly added dependencies to an exact version instead of a `^range`, so a later install doesn't quietly drift.
 
 ```ini
 engine-strict=true
