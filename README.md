@@ -242,7 +242,7 @@ chore: ...
 
 ### `detect-secrets`
 
-GitHub's [secret scanning](#repository-settings) only catches a leaked key after it's pushed. `detect-secrets` runs as a `pre-commit` hook and catches it before the commit even happens — the layer in front, not behind:
+GitHub's [secret scanning](#repository-settings) only catches a leaked key after it's pushed. `detect-secrets` runs as a `pre-commit` hook and catches it before the commit even happens:
 
 ```yaml
 - repo: https://github.com/Yelp/detect-secrets
@@ -290,6 +290,21 @@ trim_trailing_whitespace = false
 
 - Wired into `check` via `format:check` (see [Canonical commands](#canonical-commands)); add it as a `pre-commit` hook too if you want the fix applied before the commit even lands.
 - Commit `.prettierrc` and `.prettierignore` so formatting is deterministic across sessions and worktrees, not whatever defaults happen to be installed.
+
+### ESLint
+
+Prettier only handles formatting — it won't catch an unused variable, a missing `await`, or an unreachable branch. ESLint catches those:
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "fix": "npm run format && eslint . --fix"
+  }
+}
+```
+
+`--max-warnings 0` matters specifically for an agent: without it, warnings pile up silently and `check` stays green while quality erodes. Commit `.eslintrc` (or `eslint.config.js` for flat config) for the same reason as `.prettierrc` — deterministic rules across sessions and worktrees.
 
 ### VS Code
 
@@ -544,6 +559,7 @@ gh pr view --comments      # what did review say
 ├── .pre-commit-config.yaml
 ├── .prettierrc
 ├── .prettierignore
+├── eslint.config.js
 ├── .secrets.baseline
 ├── .mise.toml
 ├── release-please-config.json
