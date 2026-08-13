@@ -304,7 +304,7 @@ Prettier only handles formatting — it won't catch an unused variable, a missin
 }
 ```
 
-`--max-warnings 0` matters specifically for an agent: without it, warnings pile up silently and `check` stays green while quality erodes. Commit `.eslintrc` (or `eslint.config.js` for flat config) for the same reason as `.prettierrc` — deterministic rules across sessions and worktrees.
+`--max-warnings 0` matters specifically for an agent: without it, warnings pile up silently and `check` stays green while quality erodes. Commit `eslint.config.js` for the same reason as `.prettierrc` — deterministic rules across sessions and worktrees.
 
 ### VS Code
 
