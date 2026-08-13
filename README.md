@@ -14,9 +14,9 @@ Tick these off in order. Details for each are in the matching section below.
 
 **Do next — makes the agent noticeably better, not just safer**
 
-- [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs) + [`docs/testing.md`](#docs) — what kind of test belongs where, and "don't weaken tests to pass"
+- [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs) + [`docs/testing.md`](#docs)
 - [ ] [Git hook runner](#git-hooks) (pre-commit) enforcing Conventional Commits
-- [ ] [`detect-secrets`](#detect-secrets) pre-commit hook + `.secrets.baseline` — catches a leak before the commit, not after
+- [ ] [`detect-secrets`](#detect-secrets) pre-commit hook + `.secrets.baseline`
 - [ ] [`release-please`](#release-please) — turns those commits into `CHANGELOG.md` + version bumps
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
