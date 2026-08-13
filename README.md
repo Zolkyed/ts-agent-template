@@ -158,13 +158,6 @@ docs
 chore
 ```
 
-Plus:
-
-```text
-p0 / p1 / p2   # priority
-agent          # AI-authored, for later auditing
-```
-
 ```text
 .github/
 └── labels.yml
@@ -218,7 +211,7 @@ Explicit review boundaries once more than one contributor — human or agent —
 
 ### Git hooks
 
-Raw `.git/hooks/` scripts aren't tracked by git — they live outside the repo, so they don't survive a clone or a fresh worktree. Use **pre-commit** instead, so the config file itself (`.pre-commit-config.yaml`) is committed, and every worktree gets the same hooks automatically.
+`.git/hooks/` isn't tracked by git, so it won't survive a clone or new worktree. Use **pre-commit** instead — its config (`.pre-commit-config.yaml`) is a committed file, so every worktree gets the same hooks.
 
 Enforce, at minimum, Conventional Commits on `commit-msg`:
 
@@ -251,7 +244,7 @@ trim_trailing_whitespace = false
 
 ### Prettier
 
-`.editorconfig` only sets baseline editor behavior (indent size, line endings) — it doesn't rewrite code. Prettier actually enforces and auto-fixes style, so the agent's output is formatted the same way every time instead of drifting toward whatever it typed. Wire it into the tools you already have:
+`.editorconfig` sets baseline editor behavior; it doesn't rewrite code. Prettier auto-fixes style, so output is formatted consistently every time.
 
 ```json
 {
@@ -425,8 +418,6 @@ tests/
 docs/
 └── AGENTS.md
 ```
-
-Root stays generic (commands, git, GitHub). Each nested one holds only what's specific to that folder — e.g. `src/api/AGENTS.md`: "this adapter must stay framework-agnostic, don't add new deps here"; `tests/AGENTS.md`: "use the `db` fixture, never hit the real database." Don't create one until a folder actually needs rules the root doesn't cover — an empty or redundant nested file is worse than none, same as a stale docs index.
 
 ### `docs/`
 
