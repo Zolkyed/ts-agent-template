@@ -236,6 +236,12 @@ At the repository root. Keep it short — Skills hold the detailed workflows.
 ```markdown
 # Development Instructions
 
+## Commands
+- Install: `...`
+- Check (lint + typecheck + test): `...`
+- Build: `...`
+See `docs/INDEX.md` before searching the codebase blind.
+
 ## Git
 - Work only in the current worktree.
 - Never work directly on `main`.
@@ -248,13 +254,15 @@ At the repository root. Keep it short — Skills hold the detailed workflows.
 - Do not merge PRs unless explicitly requested.
 
 ## Testing
-- Run relevant tests before committing.
+- Run `check` before committing.
 - Run the build before creating a PR.
 
 ## Code
-- Follow existing project architecture.
+- Follow existing project architecture — see `docs/architecture/overview.md`.
 - Don't modify unrelated files.
 ```
+
+The `Commands` block is the highest-leverage line in this file: it's the one thing that turns "the agent read the rules" into "the agent's output is verified," rather than trusting it to guess your package manager and flags correctly every session.
 
 ### 17. `.gitignore`
 
@@ -290,7 +298,50 @@ docs/
 └── assets/         # images used by the docs above
 ```
 
-### 20. Your final repository structure
+### 20. Canonical commands
+
+One command per action, documented in AGENTS.md and runnable without guessing the package manager or flags:
+
+```
+check   → lint + typecheck + test   (single entry point, run before every commit)
+test    → test suite
+build   → production build
+```
+
+```json
+{
+  "scripts": {
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "lint": "...",
+    "typecheck": "...",
+    "test": "...",
+    "build": "..."
+  }
+}
+```
+
+Polyglot repo? Use `just` or a `Makefile` instead, so the entry point isn't tied to one language's tooling.
+
+This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file.
+
+### 21. `docs/INDEX.md`
+
+A one-page map of `docs/`, so the agent finds things instead of grepping blind:
+
+```markdown
+# Docs Index
+- [Architecture overview](architecture/overview.md)
+- [API reference](api/)
+- [Setup guide](guides/setup.md)
+```
+
+Update it whenever `docs/` changes — a stale index is worse than no index, since the agent will trust it.
+
+### 22. Architecture overview
+
+`docs/architecture/overview.md` — module boundaries, where new code belongs, and why any unusual decisions exist. This is what lets an agent place a new file correctly instead of guessing from whatever's nearby. Once the project has enough of these, split them into ADRs under `docs/architecture/decisions/`.
+
+### 23. Your final repository structure
 
 ```
 .
@@ -310,8 +361,11 @@ docs/
 │   ├── extensions.json
 │   └── tasks.json
 ├── docs/
+│   ├── INDEX.md
 │   ├── api/
 │   ├── architecture/
+│   │   ├── overview.md
+│   │   └── decisions/
 │   ├── guides/
 │   └── assets/
 ├── .editorconfig
