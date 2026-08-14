@@ -5,5 +5,16 @@
       "release-type": "node",
       "changelog-path": "CHANGELOG.md"
     }
-  }
+  },
+  "changelog-sections": [
+    { "type": "feat", "section": "🚀 Feature Development" },
+    { "type": "fix", "section": "🐛 Bug Fixes" },
+    { "type": "perf", "section": "⚡ Performance" },
+    { "type": "refactor", "section": "♻️ Refactors" },
+    { "type": "docs", "section": "📝 Documentation" },
+    { "type": "chore", "section": "🔧 Maintenance" },
+    { "type": "ci", "section": "🔧 Maintenance" },
+    { "type": "build", "section": "🔧 Maintenance" },
+    { "type": "test", "section": "✅ Tests", "hidden": true }
+  ]
 }
