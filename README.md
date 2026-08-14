@@ -250,6 +250,10 @@ gh label create feature -c a2eeef -d "New functionality"
 gh label create refactor -c fbca04 -d "Code change with no behavior change"
 gh label create docs -c 0075ca -d "Documentation only"
 gh label create chore -c cfd3d7 -d "Maintenance, tooling, deps"
+
+# GitHub's stock defaults overlap two of the above — delete the duplicates
+gh label delete documentation --yes
+gh label delete enhancement --yes
 ```
 
 ```text
@@ -514,7 +518,8 @@ Highest-impact commit type since the last tag wins:
 fix:                        → patch  (1.2.3 → 1.2.4)
 feat:                       → minor  (1.2.3 → 1.3.0)
 feat!: / BREAKING CHANGE:   → major  (1.2.3 → 2.0.0)
-docs:, chore:, refactor:    → no bump on their own
+chore:, docs:, refactor:    → patch, since changelog-sections marks them visible
+                               (only `test` is hidden + excluded from bump)
 ```
 
 ```text
