@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/Zolkyed/ai/compare/example-repo-v0.1.2...example-repo-v0.1.3) (2026-08-14)
+
+
+### 🔧 Maintenance
+
+* populate .claude/settings.json, fix cross-platform gaps ([#17](https://github.com/Zolkyed/ai/issues/17)) ([b16a608](https://github.com/Zolkyed/ai/commit/b16a608ec8e95ce0485b13d908a47f1cd33bc296))
+
 ## [0.1.2](https://github.com/Zolkyed/ai/compare/example-repo-v0.1.1...example-repo-v0.1.2) (2026-08-14)
 
 
