@@ -1,0 +1,7 @@
+# Skip this file entirely on a solo repo — there's no one to route to.
+# Once more than one contributor (human or agent) is involved, uncomment
+# and point paths at the right reviewers:
+#
+# *                 @your-github-handle
+# /docs/            @your-github-handle
+# /.github/         @your-github-handle
