@@ -40,6 +40,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
 - [ ] `mise` pinning the toolchain (`.mise.toml`) — reproducibility, not a team-size feature
+- [ ] `.nvmrc` — same pin, for the much larger population still on plain `nvm`
 - [ ] `rg` and `jq`/`yq` installed locally
 
 **Later — once it's not just you**
@@ -643,6 +644,7 @@ gh pr view --comments      # what did review say
 ├── .gitignore
 ├── .mise.toml
 ├── .npmrc
+├── .nvmrc
 ├── .prettierignore
 ├── .prettierrc
 ├── commitlint.config.js
