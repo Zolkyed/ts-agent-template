@@ -18,6 +18,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [Canonical `check` / `fix` / `verify` commands](#canonical-commands)
 - [ ] [`AGENTS.md`](#agentsmd) at repo root — Commands + Safety sections — nest more in subfolders as they need their own rules
 - [ ] [`.gitignore`](#gitignore) — block `node_modules/`, `dist/`, `.env`
+- [ ] [`.gitattributes`](#gitattributes) — force LF line endings regardless of contributor OS
 - [ ] `LICENSE` — declare terms explicitly, even if "all rights reserved"
 - [ ] [CI workflow](#github-actions-ci) — install → check → build
 - [ ] [Branch protection on `main`](#repository-settings) — require PR + passing CI, block force-push
@@ -39,6 +40,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
 - [ ] `mise` pinning the toolchain (`.mise.toml`) — reproducibility, not a team-size feature
+- [ ] `.nvmrc` — same pin, for the much larger population still on plain `nvm`
 - [ ] `rg` and `jq`/`yq` installed locally
 
 **Later — once it's not just you**
@@ -383,7 +385,7 @@ The last two aren't just nice-to-haves — `settings.json` sets `esbenp.prettier
 
 ### `.gitignore`
 
-Prevents build output, `node_modules`, and `.env` from ever being committed — the base guard against an agent leaking secrets or bloating history.
+Prevents build output, `node_modules`, and `.env` from ever being committed — the base guard against an agent leaking secrets or bloating history. Include OS cruft for both platforms an agent (or contributor) might run on, not just whichever one you happen to use:
 
 ```gitignore
 node_modules/
@@ -392,6 +394,17 @@ build/
 .env
 .env.*
 !.env.example
+.DS_Store
+Thumbs.db
+desktop.ini
+```
+
+### `.gitattributes`
+
+`.editorconfig` only affects editors — it doesn't stop Git itself from checking out CRLF line endings on a machine with `core.autocrlf=true` (the common Windows Git default), which causes diff noise and can fail `format:check`/`lint` on a clean checkout. Force LF at the Git level regardless of the contributor's local config:
+
+```gitattributes
+* text=auto eol=lf
 ```
 
 ### `.npmrc`
@@ -627,9 +640,11 @@ gh pr view --comments      # what did review say
 │   └── index.test.ts
 ├── .editorconfig
 ├── .env.example
+├── .gitattributes
 ├── .gitignore
 ├── .mise.toml
 ├── .npmrc
+├── .nvmrc
 ├── .prettierignore
 ├── .prettierrc
 ├── commitlint.config.js
