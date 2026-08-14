@@ -8,6 +8,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [Canonical `check` / `fix` / `verify` commands](#canonical-commands)
 - [ ] [`AGENTS.md`](#agentsmd) at repo root — Commands + Safety sections — nest more in subfolders as they need their own rules
 - [ ] [`.gitignore`](#gitignore) — block `node_modules/`, `dist/`, `.env`
+- [ ] `LICENSE` — declare terms explicitly, even if "all rights reserved"
 - [ ] [CI workflow](#github-actions-ci) — install → check → build
 - [ ] [Branch protection on `main`](#repository-settings) — require PR + passing CI, block force-push
 - [ ] [Secret scanning + push protection](#repository-settings) enabled (Settings → Code security)
@@ -15,8 +16,9 @@ Tick these off in order. Details for each are in the matching section below.
 **Do next — makes the agent noticeably better, not just safer**
 
 - [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs) + [`docs/testing.md`](#docs)
-- [ ] [Git hooks](#git-hooks) (`pre-commit`) enforcing Conventional Commits
-- [ ] [`detect-secrets`](#detect-secrets) pre-commit hook + `.secrets.baseline`
+- [ ] [`.claude/`](#claude-directory) — committed project-level Claude Code config (`commands/`, `agents/`, `settings.json`)
+- [ ] [Git hooks](#git-hooks) (Husky + `lint-staged`) enforcing Conventional Commits
+- [ ] [`gitleaks`](#gitleaks) local pre-commit scan (best-effort) + required CI check
 - [ ] [`release-please`](#release-please) — turns those commits into `CHANGELOG.md` + version bumps
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
@@ -24,7 +26,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [PR title lint](#pr-title) — enforces Conventional Commits on the commit that actually lands on `main`
 - [ ] [AI PR review](#ai-pr-review) — auto inline + summary comments on every PR
 - [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore`)
-- [ ] [Dependabot](#dependabot)
+- [ ] [Dependabot](#dependabot) + [Code scanning](#code-scanning) (CodeQL, Dependency Review)
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
 - [ ] `mise` pinning the toolchain (`.mise.toml`) — reproducibility, not a team-size feature
@@ -264,6 +266,19 @@ Run the exact same `check`/`verify` command here as locally, not a parallel set 
 
 GitHub automatically creates dependency PRs.
 
+### Code scanning
+
+Dependabot updates known dependencies after the fact; these two catch problems before merge:
+
+```text
+.github/
+└── workflows/
+    ├── codeql.yml               # github/codeql-action — vulnerability scan on push/PR + weekly
+    └── dependency-review.yml    # actions/dependency-review-action — blocks a PR adding a vulnerable/bad-license dep
+```
+
+Both free, GitHub-native, no extra account or billing.
+
 ### `release-please`
 
 ```text
@@ -300,9 +315,9 @@ Explicit review boundaries once more than one contributor — human or agent —
 
 ### Git hooks
 
-`.git/hooks/` isn't tracked by git, so it won't survive a clone or new worktree. Use `pre-commit` instead — its config (`.pre-commit-config.yaml`) is a committed file, so every worktree gets the same hooks.
+`.git/hooks/` isn't tracked by git, so it won't survive a clone or new worktree. JS/TS stack → [Husky](https://github.com/typicode/husky) + [`lint-staged`](https://github.com/okonet/lint-staged), wired up via `npm install`. Non-JS hook needed → [`pre-commit`](https://pre-commit.com/) instead.
 
-Enforce, at minimum, Conventional Commits on `commit-msg`:
+Enforce Conventional Commits on `commit-msg` via [`commitlint`](https://commitlint.js.org/) (config in `commitlint.config.js`):
 
 ```text
 feat: ...
@@ -313,22 +328,25 @@ docs: ...
 chore: ...
 ```
 
-### `detect-secrets`
+### `gitleaks`
 
-GitHub's [secret scanning](#repository-settings) only catches a leaked key after it's pushed. `detect-secrets` runs as a `pre-commit` hook and catches it before the commit even happens:
+GitHub's [secret scanning](#repository-settings) only catches a leak after it's pushed. [`gitleaks`](https://github.com/gitleaks/gitleaks) catches it earlier — locally via `.husky/pre-commit` if installed, always via the required CI check:
 
 ```yaml
-- repo: https://github.com/Yelp/detect-secrets
-  rev: v1.5.0
-  hooks:
-    - id: detect-secrets
-      args: ['--baseline', '.secrets.baseline']
+# .github/workflows/gitleaks.yml
+- uses: gitleaks/gitleaks-action@v2
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Generate the baseline once (existing matches get allow-listed), then it blocks anything new:
+Allowlist false positives in a committed `.gitleaks.toml`:
 
-```bash
-detect-secrets scan > .secrets.baseline
+```toml
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''package-lock\.json''']
 ```
 
 ### `.editorconfig`
@@ -361,7 +379,7 @@ trim_trailing_whitespace = false
 }
 ```
 
-- Wired into `check` via `format:check` (see [Canonical commands](#canonical-commands)); add it as a `pre-commit` hook too if you want the fix applied before the commit even lands.
+- Wired into `check` via `format:check` (see [Canonical commands](#canonical-commands)); add it to `lint-staged.config.js` (or `pre-commit`) too if you want the fix applied before the commit even lands.
 - Commit `.prettierrc` and `.prettierignore` so formatting is deterministic across sessions and worktrees, not whatever defaults happen to be installed.
 
 ### ESLint
@@ -579,6 +597,20 @@ E2E         → user workflows
 
 Pair it with the Safety rule already in AGENTS.md: don't weaken or delete a test to make it pass. Without both together, an agent under pressure to get `check` green will take the shortcut of quietly gutting the assertion instead of fixing the bug.
 
+### `.claude/` directory
+
+Committed, project-level Claude Code configuration — every clone and worktree gets the same agent tooling, instead of it living only in one person's local `~/.claude`.
+
+```text
+.claude/
+├── settings.json   # project settings, shared by everyone
+├── commands/        # custom slash commands — /<filename>
+├── agents/          # custom subagent definitions
+└── rules/           # optional: rules scoped by file glob, not directory
+```
+
+`AGENTS.md` stays the source of truth for instructions — this is for tool-specific extensions on top of it, not a duplicate.
+
 ## CLI tools
 
 | Tool | Why it matters for AI coding | Priority |
@@ -599,6 +631,14 @@ gh pr view --comments      # what did review say
 
 ```text
 .
+├── .claude/
+│   ├── settings.json
+│   ├── commands/
+│   │   └── README.md
+│   ├── agents/
+│   │   └── README.md
+│   └── rules/
+│       └── README.md
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── feature.yml
@@ -607,6 +647,9 @@ gh pr view --comments      # what did review say
 │   │   └── config.yml
 │   ├── workflows/
 │   │   ├── ci.yml
+│   │   ├── codeql.yml
+│   │   ├── dependency-review.yml
+│   │   ├── gitleaks.yml
 │   │   ├── release-please.yml
 │   │   ├── labels.yml
 │   │   └── pr-title.yml
@@ -614,11 +657,15 @@ gh pr view --comments      # what did review say
 │   ├── dependabot.yml
 │   ├── labels.yml
 │   └── CODEOWNERS
+├── .husky/
+│   ├── pre-commit
+│   └── commit-msg
 ├── .vscode/
 │   ├── settings.json
 │   ├── extensions.json
 │   └── tasks.json
 ├── docs/
+│   ├── AGENTS.md
 │   ├── INDEX.md
 │   ├── testing.md
 │   ├── api/
@@ -627,19 +674,29 @@ gh pr view --comments      # what did review say
 │   │   └── decisions/
 │   ├── guides/
 │   └── assets/
+├── src/
+│   ├── AGENTS.md
+│   └── index.ts
+├── test/
+│   ├── AGENTS.md
+│   └── index.test.ts
 ├── .editorconfig
-├── .gitignore
-├── .npmrc
 ├── .env.example
-├── .pre-commit-config.yaml
-├── .prettierrc
-├── .prettierignore
-├── eslint.config.js
-├── .secrets.baseline
+├── .gitignore
+├── .gitleaks.toml
 ├── .mise.toml
+├── .npmrc
+├── .prettierignore
+├── .prettierrc
+├── commitlint.config.js
+├── eslint.config.js
+├── lint-staged.config.js
 ├── release-please-config.json
 ├── .release-please-manifest.json
+├── tsconfig.json
+├── tsconfig.build.json
 ├── AGENTS.md
 ├── CONTRIBUTING.md
+├── LICENSE
 └── README.md
 ```
