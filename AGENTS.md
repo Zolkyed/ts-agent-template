@@ -7,7 +7,6 @@
 - Fix: `npm run fix`
 - Build: `npm run build`
 - Verify: `npm run verify`
-  See `docs/INDEX.md` before searching the codebase blind.
 
 ## Git
 

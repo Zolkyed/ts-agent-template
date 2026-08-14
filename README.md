@@ -1,3 +1,13 @@
+<div align="center">
+
+<img src="docs/assets/ai-agent-example.svg" alt="Simple flat-style illustration of a robot, representing an AI coding agent" width="140" />
+
+# TypeScript Repo Template
+
+Reusable, AI-agent-ready repo scaffold — Claude Code config, CI, release automation, and conventions wired up from day one.
+
+</div>
+
 ## Setup checklist
 
 Tick these off in order. Details for each are in the matching section below.
@@ -15,10 +25,9 @@ Tick these off in order. Details for each are in the matching section below.
 
 **Do next — makes the agent noticeably better, not just safer**
 
-- [ ] [`docs/INDEX.md`](#docs) + [`docs/architecture/overview.md`](#docs) + [`docs/testing.md`](#docs)
-- [ ] [`.claude/`](#claude-directory) — committed project-level Claude Code config (`commands/`, `agents/`, `settings.json`)
+- [ ] [`docs/`](#docs) — `api/`, `architecture/`, `guides/`
+- [ ] [`.claude/`](#claude-directory) — committed project-level Claude Code config (`commands/`, `agents/`, `skills/`, `rules/`, `settings.json`)
 - [ ] [Git hooks](#git-hooks) (Husky + `lint-staged`) enforcing Conventional Commits
-- [ ] [`gitleaks`](#gitleaks) local pre-commit scan (best-effort) + required CI check
 - [ ] [`release-please`](#release-please) — turns those commits into `CHANGELOG.md` + version bumps
 - [ ] [`.editorconfig`](#editorconfig)
 - [ ] [Issue templates](#issue-templates) (YAML forms)
@@ -26,7 +35,7 @@ Tick these off in order. Details for each are in the matching section below.
 - [ ] [PR title lint](#pr-title) — enforces Conventional Commits on the commit that actually lands on `main`
 - [ ] [AI PR review](#ai-pr-review) — auto inline + summary comments on every PR
 - [ ] [Labels](#labels) (`bug`/`feature`/`refactor`/`docs`/`chore`)
-- [ ] [Dependabot](#dependabot) + [Code scanning](#code-scanning) (CodeQL, Dependency Review)
+- [ ] [Dependabot](#dependabot) + [Code scanning](#code-scanning) (Dependency Review)
 - [ ] [`.npmrc`](#npmrc) (`engine-strict`, `save-exact`)
 - [ ] [`.env.example`](#envexample) kept in sync with `.env`
 - [ ] `mise` pinning the toolchain (`.mise.toml`) — reproducibility, not a team-size feature
@@ -34,7 +43,7 @@ Tick these off in order. Details for each are in the matching section below.
 
 **Later — once it's not just you**
 
-- [ ] [CODEOWNERS](#codeowners)
+- [ ] [`CODEOWNERS`](#codeowners)
 - [ ] `CONTRIBUTING.md`
 - [ ] Dev Containers
 - [ ] GitHub Projects
@@ -148,59 +157,26 @@ YAML forms, not markdown — structured fields parse reliably for AI/automation.
 ```text
 .github/
 └── ISSUE_TEMPLATE/
-    ├── feature.yml
-    ├── bug.yml
-    ├── task.yml
+    ├── feature_request.yml
+    ├── bug_report.yml
     └── config.yml   # blank_issues_enabled: false
 ```
 
 ### Labels
 
-Match the [Conventional Commits](#git-hooks) types so an issue's label predicts the commit prefix its fix will use — `bug` → `fix:`, `feature` → `feat:`, `refactor` → `refactor:`, `docs` → `docs:`, `chore` → `chore:` (also what `task.yml` issues get labeled, since a task rarely maps to its own commit type). Colors follow GitHub's own defaults where one exists, so they look native instead of custom.
+Match the [Conventional Commits](#git-hooks) types so an issue's label predicts the commit prefix its fix will use — `bug` → `fix:`, `feature` → `feat:`, `refactor` → `refactor:`, `docs` → `docs:`, `chore` → `chore:`.
 
-```yaml
-# .github/labels.yml
-- name: bug
-  color: d73a4a
-  description: Something isn't working
+Create them once via `gh label create` (or the repo's Labels UI) — most repos manage labels this way rather than syncing them from a committed file; it's only worth automating once you're maintaining the same label set across many repos:
 
-- name: feature
-  color: a2eeef
-  description: New functionality
-
-- name: refactor
-  color: fbca04
-  description: Code change with no behavior change
-
-- name: docs
-  color: 0075ca
-  description: Documentation only
-
-- name: chore
-  color: cfd3d7
-  description: Maintenance, tooling, deps
+```bash
+gh label create bug -c d73a4a -d "Something isn't working"
+gh label create feature -c a2eeef -d "New functionality"
+gh label create refactor -c fbca04 -d "Code change with no behavior change"
+gh label create docs -c 0075ca -d "Documentation only"
+gh label create chore -c cfd3d7 -d "Maintenance, tooling, deps"
 ```
 
-GitHub doesn't read this file natively — sync it with [`EndBug/label-sync`](https://github.com/EndBug/label-sync):
-
-```yaml
-# .github/workflows/labels.yml
-on:
-  push:
-    branches: [main]
-    paths: [.github/labels.yml]
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: EndBug/label-sync@v2
-        with:
-          config-file: .github/labels.yml
-```
-
-Push a change to `labels.yml` and the workflow applies it — no manual `gh label create` needed, and labels never drift from what's committed.
+The [issue templates](#issue-templates) apply these automatically via each form's `labels:` field.
 
 ### Pull request template
 
@@ -264,20 +240,19 @@ Run the exact same `check`/`verify` command here as locally, not a parallel set 
 └── dependabot.yml
 ```
 
-GitHub automatically creates dependency PRs.
+GitHub automatically creates dependency PRs. Set `commit-message.prefix` (e.g. `chore`) on every ecosystem — without it, Dependabot's PR titles (`Bump lodash from 4.17.20 to 4.17.21`) have no Conventional Commit type and fail the [PR title](#pr-title) check, making them unmergeable.
 
 ### Code scanning
 
-Dependabot updates known dependencies after the fact; these two catch problems before merge:
+Dependabot updates known dependencies after the fact; this catches problems before merge:
 
 ```text
 .github/
 └── workflows/
-    ├── codeql.yml               # github/codeql-action — vulnerability scan on push/PR + weekly
     └── dependency-review.yml    # actions/dependency-review-action — blocks a PR adding a vulnerable/bad-license dep
 ```
 
-Both free, GitHub-native, no extra account or billing.
+Free, GitHub-native, no extra account or billing.
 
 ### `release-please`
 
@@ -302,7 +277,7 @@ docs:, chore:, refactor:    → no bump on their own
 
 **Tags** — SemVer, `v`-prefixed (`v1.2.3`), matching the GitHub Releases convention. `release-please` creates the tag itself when its release PR is merged — don't tag manually, or the tag drifts from what the changelog actually shipped.
 
-### CODEOWNERS
+### `CODEOWNERS`
 
 ```text
 .github/
@@ -326,27 +301,6 @@ refactor: ...
 test: ...
 docs: ...
 chore: ...
-```
-
-### `gitleaks`
-
-GitHub's [secret scanning](#repository-settings) only catches a leak after it's pushed. [`gitleaks`](https://github.com/gitleaks/gitleaks) catches it earlier — locally via `.husky/pre-commit` if installed, always via the required CI check:
-
-```yaml
-# .github/workflows/gitleaks.yml
-- uses: gitleaks/gitleaks-action@v2
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
-Allowlist false positives in a committed `.gitleaks.toml`:
-
-```toml
-[extend]
-useDefault = true
-
-[allowlist]
-paths = ['''package-lock\.json''']
 ```
 
 ### `.editorconfig`
@@ -405,7 +359,8 @@ Commit project-level config:
 .vscode/
 ├── settings.json
 ├── extensions.json
-└── tasks.json
+├── tasks.json
+└── launch.json
 ```
 
 `extensions.json` recommends extensions for the project — don't force them unless necessary:
@@ -415,10 +370,14 @@ Commit project-level config:
   "recommendations": [
     "EditorConfig.EditorConfig",
     "eamodio.gitlens",
-    "GitHub.vscode-pull-request-github"
+    "GitHub.vscode-pull-request-github",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
   ]
 }
 ```
+
+The last two aren't just nice-to-haves — `settings.json` sets `esbenp.prettier-vscode` as the default formatter and wires ESLint's autofix into `codeActionsOnSave`, so without both extensions actually installed, those settings silently do nothing.
 
 **GitLens** is the one extension worth calling out specifically — inline blame/history, the fastest way to see what an agent changed and when without leaving the editor.
 
@@ -493,7 +452,7 @@ Polyglot repo? Use `just` or a `Makefile` instead, so the entry point isn't tied
 
 CI runs this same command — see [GitHub Actions (CI)](#github-actions-ci).
 
-This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess — the actual feedback loop, more than any instruction file. The `edit → check → fix failures → check` loop is simple enough that the agent doesn't need to understand your internal tooling at all — just that `verify` passing means done.
+This is what gives the agent a deterministic pass/fail signal instead of a plausible-looking guess: `edit → check → fix failures → check`, no need to understand your internal tooling beyond "`verify` passing means done."
 
 ### `AGENTS.md`
 
@@ -508,7 +467,6 @@ At the repository root. Keep it short — Skills hold the detailed workflows.
 - Fix: `npm run fix`
 - Build: `npm run build`
 - Verify: `npm run verify`
-See `docs/INDEX.md` before searching the codebase blind.
 
 ## Git
 - Work only in the current worktree.
@@ -543,19 +501,15 @@ See `docs/INDEX.md` before searching the codebase blind.
 - Ask before merging PRs, deleting branches, or making unrelated refactors.
 ```
 
-The `Commands` block is the highest-leverage line in this file: it's the one thing that turns "the agent read the rules" into "the agent's output is verified," rather than trusting it to guess your package manager and flags correctly every session.
+The `Commands` block is the highest-leverage line in this file — same reason as [Canonical commands](#canonical-commands) above.
 
 **Nest it.** Once the root file exists, add scoped `AGENTS.md` files inside the directories that need their own rules — the agent picks up the closest one to whatever it's editing, on top of the root:
 
 ```text
 AGENTS.md
 src/
-├── AGENTS.md
-└── api/
-    └── AGENTS.md
-tests/
 └── AGENTS.md
-docs/
+test/
 └── AGENTS.md
 ```
 
@@ -565,37 +519,23 @@ Start flat. Split into subfolders only once one category has enough files to jus
 
 ```text
 docs/
-├── INDEX.md        # map of everything below
-├── testing.md      # what kind of test belongs where
-├── api/            # endpoint docs, .http files, openapi.yaml
-├── architecture/   # design decisions, diagrams
-├── guides/         # how-to / setup / onboarding
-└── assets/         # images used by the docs above
+├── api/
+│   ├── overview.md
+│   └── endpoints.md
+├── architecture/
+│   ├── overview.md
+│   └── decisions/
+├── guides/
+│   ├── getting-started.md
+│   └── advanced-usage.md
+└── assets/         # images referenced by the docs above
 ```
 
-**`docs/INDEX.md`** — a one-page map so the agent finds things instead of grepping blind:
+**`docs/assets/`** — diagrams and screenshots referenced by the docs above, e.g. `docs/assets/ai-agent-example.svg`:
 
-```markdown
-# Docs Index
-- [Architecture overview](architecture/overview.md)
-- [Testing](testing.md)
-- [API reference](api/)
-- [Setup guide](guides/setup.md)
-```
-
-Update it whenever `docs/` changes — a stale index is worse than no index, since the agent will trust it.
+<img src="docs/assets/ai-agent-example.svg" alt="Simple flat-style illustration of a robot, representing an AI coding agent" width="160" />
 
 **`docs/architecture/overview.md`** — module boundaries, where new code belongs, and why any unusual decisions exist. This is what lets an agent place a new file correctly instead of guessing from whatever's nearby. Once the project has enough of these, split them into ADRs under `docs/architecture/decisions/` — preserves *why*, not just *what*, so future agents don't re-litigate settled decisions.
-
-**`docs/testing.md`** — what kind of test belongs where:
-
-```text
-Unit        → pure logic
-Integration → modules interacting
-E2E         → user workflows
-```
-
-Pair it with the Safety rule already in AGENTS.md: don't weaken or delete a test to make it pass. Without both together, an agent under pressure to get `check` green will take the shortcut of quietly gutting the assertion instead of fixing the bug.
 
 ### `.claude/` directory
 
@@ -603,9 +543,12 @@ Committed, project-level Claude Code configuration — every clone and worktree 
 
 ```text
 .claude/
-├── settings.json   # project settings, shared by everyone
+├── CLAUDE.md        # what's in this folder and why
+├── CONTRIBUTING.md  # how to add to each subfolder below
+├── settings.json    # project settings, shared by everyone
 ├── commands/        # custom slash commands — /<filename>
 ├── agents/          # custom subagent definitions
+├── skills/          # custom skills — folder + SKILL.md per skill
 └── rules/           # optional: rules scoped by file glob, not directory
 ```
 
@@ -632,30 +575,29 @@ gh pr view --comments      # what did review say
 ```text
 .
 ├── .claude/
+│   ├── CLAUDE.md
+│   ├── CONTRIBUTING.md
 │   ├── settings.json
 │   ├── commands/
 │   │   └── README.md
 │   ├── agents/
 │   │   └── README.md
+│   ├── skills/
+│   │   └── README.md
 │   └── rules/
 │       └── README.md
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
-│   │   ├── feature.yml
-│   │   ├── bug.yml
-│   │   ├── task.yml
+│   │   ├── feature_request.yml
+│   │   ├── bug_report.yml
 │   │   └── config.yml
 │   ├── workflows/
 │   │   ├── ci.yml
-│   │   ├── codeql.yml
 │   │   ├── dependency-review.yml
-│   │   ├── gitleaks.yml
 │   │   ├── release-please.yml
-│   │   ├── labels.yml
 │   │   └── pr-title.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   ├── dependabot.yml
-│   ├── labels.yml
 │   └── CODEOWNERS
 ├── .husky/
 │   ├── pre-commit
@@ -663,17 +605,20 @@ gh pr view --comments      # what did review say
 ├── .vscode/
 │   ├── settings.json
 │   ├── extensions.json
-│   └── tasks.json
+│   ├── tasks.json
+│   └── launch.json
 ├── docs/
-│   ├── AGENTS.md
-│   ├── INDEX.md
-│   ├── testing.md
 │   ├── api/
+│   │   ├── overview.md
+│   │   └── endpoints.md
 │   ├── architecture/
 │   │   ├── overview.md
 │   │   └── decisions/
 │   ├── guides/
+│   │   ├── getting-started.md
+│   │   └── advanced-usage.md
 │   └── assets/
+│       └── ai-agent-example.svg
 ├── src/
 │   ├── AGENTS.md
 │   └── index.ts
@@ -683,7 +628,6 @@ gh pr view --comments      # what did review say
 ├── .editorconfig
 ├── .env.example
 ├── .gitignore
-├── .gitleaks.toml
 ├── .mise.toml
 ├── .npmrc
 ├── .prettierignore
@@ -695,6 +639,8 @@ gh pr view --comments      # what did review say
 ├── .release-please-manifest.json
 ├── tsconfig.json
 ├── tsconfig.build.json
+├── package.json
+├── package-lock.json
 ├── AGENTS.md
 ├── CONTRIBUTING.md
 ├── LICENSE

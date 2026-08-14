@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Simple flat-style illustration of a robot, representing an AI coding agent">
+  <defs>
+    <style>
+      .body   { fill: #e4e4e7; stroke: #6366f1; stroke-width: 3; }
+      .accent { fill: #6366f1; }
+      .eye    { fill: #ffffff; }
+      .pupil  { fill: #27272a; }
+      .mouth  { fill: none; stroke: #27272a; stroke-width: 3; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <!-- antenna -->
+  <line x1="100" y1="20" x2="100" y2="38" stroke="#6366f1" stroke-width="3" />
+  <circle class="accent" cx="100" cy="16" r="6" />
+
+  <!-- ears -->
+  <rect class="body" x="24" y="70" width="14" height="30" rx="6" />
+  <rect class="body" x="162" y="70" width="14" height="30" rx="6" />
+
+  <!-- head -->
+  <rect class="body" x="40" y="38" width="120" height="100" rx="24" />
+
+  <!-- eyes -->
+  <circle class="eye" cx="76" cy="82" r="16" stroke="#6366f1" stroke-width="3" />
+  <circle class="eye" cx="124" cy="82" r="16" stroke="#6366f1" stroke-width="3" />
+  <circle class="pupil" cx="76" cy="82" r="6" />
+  <circle class="pupil" cx="124" cy="82" r="6" />
+
+  <!-- mouth -->
+  <path class="mouth" d="M 76 112 Q 100 126 124 112" />
+
+  <!-- body/collar -->
+  <rect class="body" x="70" y="150" width="60" height="28" rx="10" />
+  <line x1="70" y1="164" x2="130" y2="164" stroke="#6366f1" stroke-width="2" />
+</svg>
