@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/Zolkyed/ai/compare/example-repo-v0.1.1...example-repo-v0.1.2) (2026-08-14)
+
+
+### 🔧 Maintenance
+
+* remove unused security scanners, restructure docs/, wire agent tooling ([#13](https://github.com/Zolkyed/ai/issues/13)) ([3f02534](https://github.com/Zolkyed/ai/commit/3f02534bf551d74a96b2565047d8a27d21895abc))
+
 ## [0.1.1](https://github.com/Zolkyed/ai/compare/example-repo-v0.1.0...example-repo-v0.1.1) (2026-08-14)
 
 
